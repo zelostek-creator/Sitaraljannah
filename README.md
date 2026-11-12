@@ -21,7 +21,7 @@ A custom WordPress block theme (full site editing) and a local development stack
 - A sticky header, gentle scroll reveals that respect *reduced motion*, and a responsive layout down to phone width.
 - Original SVG illustrations as placeholder art. Replace them with your own product photography.
 
-## Run it locally
+## Run it locally with Docker
 
 Requirements: Docker Desktop (or Docker Engine with Compose).
 
@@ -33,6 +33,57 @@ cp .env.example .env      # then set WP_ADMIN_PASSWORD and other values
 Open http://localhost:8080 for the store and http://localhost:8080/wp-admin for the dashboard.
 
 Stop it with `docker compose down`. Add `-v` to wipe the database and start again from scratch.
+
+## Run it locally with XAMPP
+
+You need XAMPP with PHP 7.4 or newer (current XAMPP ships PHP 8.2) and WordPress 6.6 or newer.
+
+1. **Start XAMPP.** In the XAMPP Control Panel, start **Apache** and **MySQL**.
+2. **Create a database.** Open http://localhost/phpmyadmin, click *New*, name it `sitaraljannah` and click *Create*.
+3. **Add WordPress.** Download WordPress from https://wordpress.org/download/ and unzip it to `C:\xampp\htdocs\sitaraljannah` (macOS: `/Applications/XAMPP/htdocs/sitaraljannah`).
+4. **Run the installer.** Visit http://localhost/sitaraljannah and enter:
+   database `sitaraljannah`, user `root`, password *(leave empty)*, host `localhost`.
+   Then choose your site title and admin login.
+5. **Add the theme.** Choose one of these:
+   - **Copy:** copy `theme/sitaraljannah` into `htdocs/sitaraljannah/wp-content/themes/`.
+   - **Link (recommended while developing):** link the folder, so edits in this repo show up immediately and you can commit them with git.
+     - Windows (Command Prompt):
+       `mklink /J C:\xampp\htdocs\sitaraljannah\wp-content\themes\sitaraljannah C:\path\to\Sitaraljannah\theme\sitaraljannah`
+     - macOS:
+       `ln -s ~/path/to/Sitaraljannah/theme/sitaraljannah /Applications/XAMPP/htdocs/sitaraljannah/wp-content/themes/sitaraljannah`
+6. **Activate.** In wp-admin, go to *Appearance → Themes* and activate **Sitar al Jannah**. Then go to *Plugins → Add New*, install **WooCommerce**, activate it and skip the setup wizard.
+7. **Fix the links.** Go to *Settings → Permalinks*, choose **Post name** and click *Save*. The menus link to `/shop/`, `/our-story/` and similar addresses, so this step is needed.
+
+### Optional: add the pages, categories and demo products automatically
+If you have [WP-CLI](https://wp-cli.org/) installed (on Windows, run this from Git Bash), run the same provisioning script the Docker setup uses, from inside the WordPress folder:
+
+```bash
+cd /c/xampp/htdocs/sitaraljannah
+bash /c/path/to/Sitaraljannah/bin/provision.sh "http://localhost/sitaraljannah" "Sitar al Jannah" admin "your-admin-password" you@example.com
+```
+
+The script is safe to re-run. It creates *Our Story*, *Contact*, *Shipping & Returns*, *Size Guide* and *Journal*, the `abayas` / `hijabs` / `prayer-sets` categories, and 8 sample products.
+
+Without WP-CLI, create these by hand as described in step 4 of *Install on a live site* below.
+
+### Note on subfolder URLs
+Because XAMPP serves the site from `http://localhost/sitaraljannah/`, the hard-coded links in the header, footer and homepage buttons (for example `/shop/`) point to `http://localhost/shop/` and will 404 locally. You have two ways to fix this:
+- **Quick:** edit the links in *Appearance → Editor* (Navigation, buttons) to include `/sitaraljannah/`.
+- **Cleaner:** set up a virtual host so the site runs at the domain root, for example `http://sitaraljannah.local`:
+  1. Add this to `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
+     ```apache
+     <VirtualHost *:80>
+         ServerName sitaraljannah.local
+         DocumentRoot "C:/xampp/htdocs/sitaraljannah"
+         <Directory "C:/xampp/htdocs/sitaraljannah">
+             AllowOverride All
+             Require all granted
+         </Directory>
+     </VirtualHost>
+     ```
+  2. Add `127.0.0.1 sitaraljannah.local` to `C:\Windows\System32\drivers\etc\hosts` (open Notepad as Administrator to edit it).
+  3. Restart Apache.
+  4. In *Settings → General*, change both URLs to `http://sitaraljannah.local`.
 
 ## Install on a live site
 
